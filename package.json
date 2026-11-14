@@ -1,0 +1,24 @@
+{
+  "name": "open-sourcing-engine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "monitors": "tsx src/monitors.ts",
+    "seeds": "tsx src/seeds.ts",
+    "pipeline": "tsx src/pipeline.ts",
+    "backtest": "tsx src/backtest.ts",
+    "ablation": "tsx src/ablation.ts",
+    "costs": "tsx src/costs.ts",
+    "serve": "tsx src/server.ts",
+    "export": "tsx src/server.ts export"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

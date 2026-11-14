@@ -1,0 +1,38 @@
+{
+  "version": "open-0.1",
+  "status": "public default; written for the open version, weights are equal and each user sets their own",
+  "dimensions": [
+    {
+      "key": "identity", "label": "Distinctiveness", "weight": 12.5,
+      "body_en": "**Measures:** whether the founder's public record shows something specific to them, beyond school and employer.\n\n| Level | Definition |\n|---|---|\n| 1 | The public record is generic: it would describe many people with the same background. |\n| 2 | One memorable detail, but it does not explain any choice they made. |\n| 3 | One distinctive trait that explains at least one important choice. |\n| 4 | Several traits that fit together and explain choices in more than one area. |\n| 5 | A coherent, unusual profile that could not be mistaken for someone else, visible across their work. |\n\nMark Unknown when the sources say too little about the person."
+    },
+    {
+      "key": "founder_market_fit", "label": "Founder-market fit", "weight": 12.5,
+      "body_en": "**Measures:** how directly the founder's past work bears on this exact problem.\n\n| Level | Definition |\n|---|---|\n| 1 | No visible link between past work and this problem. |\n| 2 | Adjacent field, no direct exposure to the problem. |\n| 3 | Worked in the field and touched the problem. |\n| 4 | Held a role where this problem was their daily work, or published on it. |\n| 5 | Recognized for work on this exact problem, with results others cite or build on. |\n\nUse stated roles, papers, repositories and filings. Do not infer from a school or employer name alone."
+    },
+    {
+      "key": "ambition", "label": "Ambition", "weight": 12.5,
+      "body_en": "**Measures:** the size of the outcome the company says it is going for.\n\n| Level | Definition |\n|---|---|\n| 1 | A feature or a small tool with no stated larger aim. |\n| 2 | A product for a narrow niche. |\n| 3 | A product that could lead a defined category. |\n| 4 | A stated plan to reshape how a large group works. |\n| 5 | A stated plan to create or redefine a large market, with a credible first step. |\n\nScore only what the company itself has written or said."
+    },
+    {
+      "key": "product_value", "label": "Product value", "weight": 12.5,
+      "body_en": "**Measures:** whether real users get value from the product today.\n\n| Level | Definition |\n|---|---|\n| 1 | A public product with no sign of use. |\n| 2 | A few users trying it. |\n| 3 | Users describing a concrete benefit in their own words. |\n| 4 | Repeat use or users depending on it for real work. |\n| 5 | Users who say they could not go back, in numbers. |\n\nMark Unknown unless the product is public and the sources show real use."
+    },
+    {
+      "key": "gtm_traction", "label": "Go-to-market traction", "weight": 12.5,
+      "body_en": "**Measures:** evidence that customers or adopters are arriving.\n\n| Level | Definition |\n|---|---|\n| 1 | No named customers or adoption figures. |\n| 2 | A waitlist or pilot mentions without names. |\n| 3 | Named pilots, or open-source adoption such as downloads or dependents. |\n| 4 | Named paying customers or fast-growing adoption figures. |\n| 5 | Many named customers with stated results, or adoption that others report independently. |"
+    },
+    {
+      "key": "tech_traction", "label": "Technical traction", "weight": 12.5,
+      "body_en": "**Measures:** evidence that the technology works and that technical people notice.\n\n| Level | Definition |\n|---|---|\n| 1 | A claim with nothing to inspect. |\n| 2 | A demo video or a paper without code. |\n| 3 | Working code, a benchmark, or a repository others can run. |\n| 4 | Fast-growing repository interest, reproduced benchmarks, or outside contributors. |\n| 5 | Results that set a public reference point others compare against. |"
+    },
+    {
+      "key": "growth_path", "label": "Growth path", "weight": 12.5,
+      "body_en": "**Measures:** whether there is a believable route from today's product to a much larger business.\n\nThis needs a conversation with the founders. Before contact it is Unknown."
+    },
+    {
+      "key": "investor_hype", "label": "Investor demand", "weight": 12.5,
+      "body_en": "**Measures:** whether other investors are actively pursuing the company right now.\n\nThis cannot be read from the web. Before contact it is Unknown. Investor names, accelerator membership and star counts are not evidence of it."
+    }
+  ]
+}

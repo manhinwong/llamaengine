@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+seeds.local.json
+data/
+public/app.js
+.insforge/
+*.log
+.DS_Store
+public/data.json
