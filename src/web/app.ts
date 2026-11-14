@@ -53,7 +53,10 @@ async function loadFeedback() {
       const fromHash = location.hash.match(/m=([a-z0-9]{4,20})/)?.[1];
       let saved: string | null = null;
       try { saved = localStorage.getItem("space"); } catch {}
-      space = fromHash ?? saved ?? "main";
+      // Each browser gets its own memory space on first visit, so one visitor's votes never change another's ranking.
+      // Opening a shared link (#m=...) joins that space on purpose.
+      space = fromHash ?? saved ?? (Math.random().toString(36) + "00000000").slice(2, 10);
+      if (space !== saved) try { localStorage.setItem("space", space); } catch {}
       const r = await fetch(`${mem()!.url}/api/database/records/${mem()!.table}?session=eq.${space}&order=at.asc&limit=1000`, { headers: memHeaders() });
       if (!r.ok) throw new Error();
       feedback = await r.json();
@@ -100,7 +103,7 @@ function memoryPanel() {
   const mine = feedback.filter((f) => f.investor === investor);
   if (!PERSONAS[investor]) return "";
   const name = word(PERSONAS[investor].name);
-  const where = store === "shared" ? T(`Stored in InsForge as append-only events · memory space <span class="m">${esc(space)}</span>`, `以只追加事件存于 InsForge · 记忆空间 <span class="m">${esc(space)}</span>`) : store === "server" ? T("Stored on the local server as append-only events", "以只追加事件存于本地服务器") : T("Stored in this browser only", "仅存于此浏览器");
+  const where = store === "shared" ? T(`Private to this browser, stored as append-only events · <button class="link inline" data-share="1">Copy a link to share this memory</button>`, `仅此浏览器可见，以只追加事件存储 · <button class="link inline" data-share="1">复制链接以共享此记忆</button>`) : store === "server" ? T("Stored on the local server as append-only events", "以只追加事件存于本地服务器") : T("Stored in this browser only", "仅存于此浏览器");
   if (!mine.length) return `<div class="memory empty-mem"><h3>${T(`What the engine has learned about ${name}`, `引擎对${name}的了解`)}</h3><p class="fine">${T("Nothing yet. Vote on a company with a reason; the reason decides which preferences move, and the list re-ranks at once.", "暂无。对任一公司投票并选择理由；理由决定调整哪些偏好，名单随即重排。")} ${where}.</p></div>`;
   const L = learned(investor, data.candidates, data.scores, feedback).slice(0, 8);
   const max = Math.max(...L.map((x) => Math.abs(x.points)), 1);
@@ -477,6 +480,11 @@ document.addEventListener("click", async (e) => {
   if (t.dataset.cancel) { pending = null; return render(); }
   if (t.dataset.reason && pending) { const ev = { investor, candidate_id: pending.id, vote: pending.vote, reason: t.dataset.reason }; pending = null; await sendFeedback(ev); return render(); }
   if (t.id === "reset") return resetFeedback();
+  if (t.dataset.share) {
+    const link = `${location.origin}${location.pathname}#m=${space}`;
+    try { await navigator.clipboard.writeText(link); t.textContent = T("Link copied", "链接已复制"); } catch { prompt(T("Copy this link", "复制此链接"), link); }
+    return;
+  }
 });
 
 (async () => {
