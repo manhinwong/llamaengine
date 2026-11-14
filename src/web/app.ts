@@ -1,6 +1,9 @@
 import { rank, learned, compare, PERSONAS, REASONS } from "../rank.ts";
 import type { Feedback, Candidate, Score } from "../store.ts";
 
+// Two built-in investors, kept as demo views in the open version so the list and the persona switch work before anyone sets up their own.
+const BUILTIN = { A: { ...PERSONAS.A }, B: { ...PERSONAS.B } };
+
 type Data = any;
 let data: Data;
 let feedback: Feedback[] = [];
@@ -21,7 +24,7 @@ const CN: Record<string, string> = {
   launch_post: "发布公告", hiring: "招聘", show_hn: "Show HN", paper: "论文", left_job: "离职创业", cohort: "孵化器名单", form_d: "Form D", star_velocity: "Star 增速", linkedin_post: "LinkedIn 帖子", x_post: "X 帖子", producthunt: "Product Hunt", web_mention: "网络佐证", lab_roster_change: "实验室名单变动", title_change: "职位变更",
   founder_market_fit: "创始人与市场匹配", tech_traction: "技术进展", identity: "个人特质", seed_person: "种子名单人物",
   love_space: "看好赛道", love_founder: "看好创始人", wrong_sector: "赛道不符", too_late: "太晚了", weak_founder_fit: "创始人匹配弱", not_ai_native: "非 AI 原生",
-  "Investor A": "投资人 A", "Investor B": "投资人 B", "Investor C": "投资人 C", security: "安全与验证",
+  "Demo · Robotics and hardware": "示例 · 机器人与硬件", "Demo · AI infrastructure": "示例 · AI 基础设施", "Investor A": "投资人 A", "Investor B": "投资人 B", "Investor C": "投资人 C", security: "安全与验证",
   "Verification and security for AI agents and AI-written code": "AI Agent 与 AI 代码的验证与安全",
   proves_by_running: "以实际运行证明", agent_runtime_controls: "Agent 运行时管控", code_verification: "AI 代码验证", open_source: "开源", works_across_agents: "跨 Agent 通用", telem_discover: "Telem 路由搜索发现",
   "Robotics and hardware, research lineage": "机器人与硬件，重研究背景", "AI infrastructure and developer tools, open-source pull": "AI 基础设施与开发者工具，重开源势能",
@@ -229,7 +232,10 @@ function personaFrom(p: Profile) {
 }
 function registerProfiles() {
   for (const k of Object.keys(PERSONAS)) delete PERSONAS[k];
-  for (const p of profiles) PERSONAS[p.id] = personaFrom(p);
+  for (const p of profiles) PERSONAS[p.id] = personaFrom(p); // a visitor's own investors come first
+  // Sector preferences are set strongly so the two demo views visibly differ.
+  PERSONAS.demoA = { ...BUILTIN.A, name: "Demo · Robotics and hardware", weights: { ...BUILTIN.A.weights, "sector:robotics": 3, "sector:hardware": 2.5, "sector:software_for_hardware": 2.5 } };
+  PERSONAS.demoB = { ...BUILTIN.B, name: "Demo · AI infrastructure", weights: { ...BUILTIN.B.weights, "sector:ai_infra": 3, "sector:dev_tools": 2.5 } };
 }
 async function loadProfiles() {
   profiles = [];
@@ -244,8 +250,8 @@ async function loadProfiles() {
   registerProfiles();
   let me: string | null = null;
   try { me = localStorage.getItem("me"); } catch {}
-  investor = profiles.find((p) => p.id === me)?.id ?? profiles[0]?.id ?? "";
-  onboarding = !profiles.length;
+  investor = me && PERSONAS[me] ? me : profiles[0]?.id ?? "demoA";
+  onboarding = false; // the demo views are there on a first visit; "+ New investor" opens the setup dialog
 }
 async function createProfile() {
   const p: Profile = { id: "u" + Math.random().toString(36).slice(2, 9), name: draft.name.trim().slice(0, 40) || `${T("Investor", "投资人")} ${profiles.length + 1}`, prefs: { sectors: draft.sectors, avoid: draft.avoid.filter((x) => !draft.sectors.includes(x)), signals: draft.signals, tags: draft.tags, dims: draft.dims } };
@@ -304,7 +310,7 @@ function wizard() {
   const dots = screens.map((_, i) => `<i class="${i === step ? "now" : i < step ? "done" : ""}"></i>`).join("");
   return `<div class="wz-back" data-wz-close="1"></div>
   <form id="onb" class="wz" role="dialog" aria-modal="true" aria-labelledby="wz-title">
-    <div class="wz-top"><div class="wz-dots" role="img" aria-label="${T(`Step ${step + 1} of ${screens.length}`, `第 ${step + 1} 步，共 ${screens.length} 步`)}">${dots}</div>${profiles.length ? `<button type="button" class="wz-x" data-onb-cancel="1" aria-label="${T("Close", "关闭")}">×</button>` : ""}</div>
+    <div class="wz-top"><div class="wz-dots" role="img" aria-label="${T(`Step ${step + 1} of ${screens.length}`, `第 ${step + 1} 步，共 ${screens.length} 步`)}">${dots}</div><button type="button" class="wz-x" data-onb-cancel="1" aria-label="${T("Close", "关闭")}">×</button></div>
     <div class="wz-body" data-step="${step}"><h2 id="wz-title">${title}</h2><p class="wz-sub">${sub}</p>${body}</div>
     <div class="wz-foot">${step > 0 ? `<button type="button" class="wz-link" data-wz-back="1">${T("Back", "上一步")}</button>` : "<span></span>"}<span class="wz-count m">${step + 1} / ${screens.length}</span><button type="submit" class="primary">${step < LAST ? T("Continue", "继续") : T("Show my list", "查看我的名单")}</button></div>
   </form>`;
@@ -458,10 +464,10 @@ document.addEventListener("submit", (e) => {
   if (step < LAST) { step++; renderWizard(); }
   else { step = 0; draftPreset = "balanced"; void createProfile(); }
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && onboarding && profiles.length) { onboarding = false; render(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && onboarding) { onboarding = false; render(); } });
 document.addEventListener("click", (e) => {
   const t = e.target as HTMLElement;
-  if (t.dataset?.wzClose && profiles.length) { onboarding = false; render(); }
+  if (t.dataset?.wzClose) { onboarding = false; render(); }
 });
 
 (window as any).setLang = (l: "en" | "cn") => { lang = l; if (data) render(); };
