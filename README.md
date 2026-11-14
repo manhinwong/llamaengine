@@ -161,6 +161,7 @@ Notes:
 
 ## Known gaps
 
+- **The "already raised" filter is unreliable, and the digest shows it.** It relies on a funding-data lookup by website (Monid) plus rounds stated in the collected signals. The lookup was over its daily budget for the last cycle and missed companies even when it ran, and results for "checked, nothing found" were not cached. A manual web check on 2026-11-14 found at least five digest companies well past seed: River AI ($1.1B), Ricursive Intelligence ($300M Series A), Deep Cogito ($43M Series A), Helicon ($16.5M seed) and Plurai ($13M seed). They were left in the published digest as evidence of the gap. The fix is a per-company funding search with the result cached, and a target range (for example raising $2-10M) as an explicit gate.
 - The backtest has two hits; it demonstrates the method only.
 - Investor preferences are a simple weighted list. Votes do not yet carry over to similar companies.
 - Founder profile changes are not tracked.
