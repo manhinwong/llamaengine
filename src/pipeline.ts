@@ -13,6 +13,7 @@ import { scoreCandidates } from "./score.ts";
 import { logSpend } from "./telem.ts";
 import { corroborate } from "./corroborate.ts";
 import { locate } from "./locate.ts";
+import { checkFunding } from "./funding.ts";
 import type { RawItem } from "./sources/edgar.ts";
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -88,6 +89,20 @@ async function build() {
       else if (!l || l.us === null) c.status = "location_unconfirmed";
     }
     console.log(`  US: ${cands.filter((c) => c.status === "digest").length}, non-US: ${cands.filter((c) => c.status === "not_us").length}, unconfirmed: ${cands.filter((c) => c.status === "location_unconfirmed").length}`);
+  }, undefined);
+  // Funding range: runs last, on companies that survived every other gate, so searches are not spent on ones already out.
+  await step("gate: funding range (telem search per company, cached)", async () => {
+    const live = cands.filter((c) => c.status === "digest");
+    const f = await checkFunding(live, signals);
+    let out = 0, known = 0;
+    for (const c of live) {
+      const x = f[c.id];
+      if (!x?.found) continue;
+      const label = x.latest ?? `${x.stage ?? "round"}${x.total_m != null ? `, $${x.total_m}M raised` : ""}`;
+      if (x.out_of_range) { c.status = "already_raised"; c.raised = { round: `${label} (${x.why})`.slice(0, 120), date: null, source: x.url! }; out++; }
+      else if (x.total_m != null || x.latest) { c.raised = { round: label.slice(0, 90), date: null, source: x.url! }; known++; }
+    }
+    console.log(`  checked ${live.length}: ${out} out of range, ${known} in range with a known round, ${live.length - out - known} with no public record`);
   }, undefined);
   write("candidates", cands);
   const digest = cands.filter((c) => c.status === "digest");

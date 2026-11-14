@@ -9,7 +9,7 @@ Built at SearchHack (2026-11-14) on Telem and Tavily. Live demo: https://llamaen
 1. **Collect.** Telem Monitors and pinned Telem searches watch for launch posts, founding-engineer job posts, "left to start a company" posts, papers and cohort listings. Tavily maps cohort and lab pages and diffs them. SEC Form D, GitHub and Show HN are read directly.
 2. **Merge.** Signals about the same company are joined on website, LinkedIn URL, GitHub handle and name. A shared name alone never merges two companies with different websites.
 3. **Corroborate.** A company seen in one place gets one routed Telem search for a second, independent signal.
-4. **Gate.** A company reaches the digest only if it has two independent signal families, has not announced a sizeable round, and one of its own sources states a US location.
+4. **Gate.** A company reaches the digest only if it has two independent signal families, one of its own sources states a US location, and a per-company funding search shows no Series A, no more than $10M raised and no valuation above $50M.
 5. **Score.** Each company is scored on the eight-dimension rubric in `rubric.json`. A dimension with no public evidence is marked U and left unscored. Every claim carries a label: F for the founder's own claim, V for a verified record, A for the agent's inference.
 6. **Rank.** Order is the low end of the score range, P + (100 − C) / 5, plus a bonus for one standout dimension (level 4 or 5, halved when only the founder's claims support it, ambition excluded), plus the investor's own preferences.
 7. **Learn.** A thumbs vote with a reason is stored as an append-only event and shifts that investor's preferences. The reason decides what moves.
@@ -64,15 +64,15 @@ These numbers are from 2026-11-14. `sample/data.json` is the data behind the liv
 
 | Step | Count |
 |---|---|
-| Signals ingested | 1,658 |
-| Companies after entity resolution | 371 |
-| Pass the two-signal gate | 132 |
-| Removed: already announced a round | 38 |
-| Removed: not confirmed US-based | 38 |
+| Signals ingested | 1,951 |
+| Companies after entity resolution | 452 |
+| Pass the two-signal gate | 160 |
+| Removed: already announced a round, or outside the funding range | 53 |
+| Removed: not confirmed US-based | 45 |
 | Removed: already known to the operator | 6 |
-| **In the digest** | **50** |
+| **In the digest** | **56** |
 
-Another 216 single-signal startups sit on the watchlist.
+Another 268 single-signal startups sit on the watchlist.
 
 ### With Telem vs without Telem
 
@@ -80,12 +80,12 @@ Same stored signals, same entity resolution and gate. The right column drops eve
 
 | | With Telem | Without Telem |
 |---|---|---|
-| Signals | 1,658 | 497 |
-| Companies | 371 | 95 |
-| Pass the two-signal gate | 132 | 1 |
-| Digest companies that still pass | 50 | 0 |
+| Signals | 1,951 | 518 |
+| Companies | 452 | 95 |
+| Pass the two-signal gate | 160 | 1 |
+| Digest companies that still pass | 56 | 0 |
 
-271 companies were surfaced only by Telem. Corroboration is itself a Telem search, so part of the gate gap comes from the design.
+352 companies were surfaced only by Telem. Corroboration is itself a Telem search, so part of the gate gap comes from the design.
 
 ### Blind backtest
 
@@ -102,10 +102,10 @@ This shows the method, not a lead-time claim. 73% of Telem results carried no pu
 
 | Run | Cost | Unit cost |
 |---|---|---|
-| Ingest: 1,310 raw items, 459 new signals | $0.50 | $0.001 per signal |
-| Build: corroborate, gate, locate, score | $3.06 | $0.06 per digest company |
-| **One full search cycle** | **$3.56** | **$0.07 per digest company** |
-| Monitor tick | $0.13 to $5.61 | a monitor's first tick is the expensive one |
+| Ingest: 1,392 raw items, 264 new signals | $0.51 | $0.002 per signal |
+| Build: corroborate, gate, locate, funding check, score | $3.13 | $0.06 per digest company |
+| **One full search cycle** | **$3.64** | **$0.07 per digest company** |
+| Monitor tick | $0.02 to $4.90 | three of the eight monitors cost $2.50 to $4.90 on every tick |
 
 Bulk extraction runs on a small model and only scoring uses a large one: the same extraction load cost $6.35 on the large model and $0.018 on the small one. Model calls are refused past `CLAUDE_BUDGET_USD` in total or `CLAUDE_RUN_BUDGET_USD` per run.
 
@@ -161,7 +161,7 @@ Notes:
 
 ## Known gaps
 
-- **The "already raised" filter is unreliable, and the digest shows it.** It relies on a funding-data lookup by website (Monid) plus rounds stated in the collected signals. The lookup was over its daily budget for the last cycle and missed companies even when it ran, and results for "checked, nothing found" were not cached. A manual web check on 2026-11-14 found at least five digest companies well past seed: River AI ($1.1B), Ricursive Intelligence ($300M Series A), Deep Cogito ($43M Series A), Helicon ($16.5M seed) and Plurai ($13M seed). They were left in the published digest as evidence of the gap. The fix is a per-company funding search with the result cached, and a target range (for example raising $2-10M) as an explicit gate.
+- **The funding filter is new and only partly proven.** Until the last run of 2026-11-14 the "already raised" check relied on a funding-data lookup by website, which was over its daily budget and missed companies even when it ran. A manual web check then found five digest companies well past seed: River AI ($1.1B), Ricursive Intelligence ($300M Series A), Deep Cogito ($43M Series A), Helicon ($16.5M seed) and Plurai ($13M seed). The last run replaced the lookup with one routed Telem search per company, cached, and a stated range: Series A or later, more than $10M raised, or a reported valuation over $50M puts a company out. It removed those five and one more. Its figures come from search-result summaries, so a wrong match is possible, and 11 of 59 companies checked had no public funding record at all.
 - The backtest has two hits; it demonstrates the method only.
 - Investor preferences are a simple weighted list. Votes do not yet carry over to similar companies.
 - Founder profile changes are not tracked.
