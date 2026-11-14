@@ -18,7 +18,25 @@ export const REASONS: Record<string, { label: string; groups: string[]; dims?: s
   too_late: { label: "Too late", groups: ["signal"] },
   weak_founder_fit: { label: "Weak founder fit", groups: ["dim", "seed"], dims: FOUNDER_DIMS },
   not_ai_native: { label: "Not AI-native", groups: ["sector"] },
+  note: { label: "In my own words", groups: ["sector", "tag", "signal", "dim", "seed"] },
 };
+
+// A typed reason is read by keyword, in the browser, with no model call. Each topic it mentions decides which of the
+// company's features the vote moves. A note that mentions none of them moves everything a little, like a bare vote.
+const NOTE_TOPICS: { re: RegExp; groups: string[]; dims?: string[] }[] = [
+  { re: /founder|team|ceo|cto|background|experience|pedigree|operator|track record/i, groups: ["dim", "seed"], dims: FOUNDER_DIMS },
+  { re: /space|market|sector|category|industry|thesis|timing|trend|tailwind/i, groups: ["sector", "tag"] },
+  { re: /product|demo|ux|design|user|customer love|works well/i, groups: ["dim"], dims: ["product_value"] },
+  { re: /traction|customer|revenue|arr|growth|adoption|pilot|contract|sales|distribution|gtm/i, groups: ["dim"], dims: ["gtm_traction"] },
+  { re: /tech|technical|research|paper|open.?source|oss|benchmark|github|model|engineering|ip\b|patent|hardware/i, groups: ["dim", "tag"], dims: ["tech_traction"] },
+  { re: /signal|early|stealth|first hire|hiring|launch/i, groups: ["signal"] },
+];
+export function noteTargets(note: string) {
+  const hits = NOTE_TOPICS.filter((t) => t.re.test(note));
+  if (!hits.length) return { groups: REASONS.note.groups, dims: undefined as string[] | undefined, matched: false };
+  const dims = hits.flatMap((t) => t.dims ?? []);
+  return { groups: [...new Set(hits.flatMap((t) => t.groups))], dims: dims.length ? [...new Set(dims)] : undefined, matched: true };
+}
 const STEP = 0.25, CAP = 1, POINTS = 5; // one unit of weight on a fully-present feature moves a candidate 5 points
 const OWN_VOTE = 6; // an explicit vote also moves that one company directly
 const STANDOUT = 8; // points per level above 3 on a company's best dimension
@@ -38,10 +56,11 @@ export function personaWeights(investor: string, feedback: Feedback[], cands: Ma
   for (const ev of feedback.filter((e) => e.investor === investor)) {
     const c = cands.get(ev.candidate_id);
     if (!c) continue;
-    const groups = REASONS[ev.reason]?.groups ?? ["sector", "tag", "signal", "dim", "seed"];
+    const typed = ev.reason === "note" && ev.note ? noteTargets(ev.note) : null;
+    const groups = typed?.groups ?? REASONS[ev.reason]?.groups ?? ["sector", "tag", "signal", "dim", "seed"];
     for (const [k, x] of Object.entries(features(c, scores.get(c.id)))) {
       if (!groups.includes(k.split(":")[0])) continue;
-      const only = REASONS[ev.reason]?.dims;
+      const only = typed ? typed.dims : REASONS[ev.reason]?.dims;
       if (only && k.startsWith("dim:") && !only.includes(k.slice(4))) continue;
       const cap = Math.max(CAP, Math.abs(PERSONAS[investor]?.weights[k] ?? 0)); // a strong starting preference is not clipped by the first vote
       w[k] = Math.max(-cap, Math.min(cap, (w[k] ?? 0) + ev.vote * STEP * (x || 1)));

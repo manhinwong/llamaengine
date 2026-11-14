@@ -12,7 +12,7 @@ Built at SearchHack (2026-11-14) on Telem and Tavily. Live demo: https://llamaen
 4. **Gate.** A company reaches the digest only if it has two independent signal families, one of its own sources states a US location, and a per-company funding search shows no Series A, no more than $10M raised and no valuation above $50M.
 5. **Score.** Each company is scored on the eight-dimension rubric in `rubric.json`. A dimension with no public evidence is marked U and left unscored. Every claim carries a label: F for the founder's own claim, V for a verified record, A for the agent's inference.
 6. **Rank.** Order is the low end of the score range, P + (100 − C) / 5, plus a bonus for one standout dimension (level 4 or 5, halved when only the founder's claims support it, ambition excluded), plus the investor's own preferences.
-7. **Learn.** A thumbs vote with a reason is stored as an append-only event and shifts that investor's preferences. The reason decides what moves.
+7. **Learn.** A thumbs vote with a reason is stored as an append-only event and shifts that investor's preferences. The reason decides what moves. A reason can also be typed in the investor's own words; it is read by keyword in the browser (founder, market, product, traction, technology, signal), with no model call, and a note that mentions none of them moves everything a little.
 8. **Watch.** Real startups seen in only one place stay on a per-sector watchlist, unscored, until a second signal arrives.
 
 In the page, each person sets up their own investor through a short dialog (sectors, signals, traits, rubric weights), can hide company names to judge a list on evidence alone, and can compare how two investors' top lists drift apart as they vote.

@@ -35,7 +35,7 @@ createServer(async (req, res) => {
       const b = JSON.parse(body);
       if (!/^[A-Za-z0-9]{1,20}$/.test(String(b.investor)) || ![1, -1].includes(b.vote) || typeof b.candidate_id !== "string" || !(b.reason in REASONS)) return json(res, 400, { error: "bad feedback" });
       const all = read<Feedback[]>("feedback"); // raw events, append-only
-      all.push({ investor: b.investor, candidate_id: b.candidate_id, vote: b.vote, reason: b.reason, at: new Date().toISOString() });
+      all.push({ investor: b.investor, candidate_id: b.candidate_id, vote: b.vote, reason: b.reason, note: typeof b.note === "string" ? b.note.slice(0, 200) : null, at: new Date().toISOString() });
       write("feedback", all);
       return json(res, 200, all);
     } catch { return json(res, 400, { error: "bad json" }); }

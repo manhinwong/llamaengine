@@ -48,7 +48,7 @@ export type Candidate = {
 };
 export type DimScore = { level: number | "U"; rationale: string; claims: { text: string; label: Label; url: string }[] };
 export type Score = { candidate_id: string; dims: Record<string, DimScore>; P: number; C: number; lower: number; upper: number; scored_at: string };
-export type Feedback = { investor: string; candidate_id: string; vote: 1 | -1; reason: string; at: string };
+export type Feedback = { investor: string; candidate_id: string; vote: 1 | -1; reason: string; at: string; note?: string | null };
 
 const tables = ["investors", "seeds", "monitor_cursors", "signals", "candidates", "scores", "feedback"] as const;
 type Table = (typeof tables)[number];

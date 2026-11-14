@@ -24,7 +24,7 @@ const CN: Record<string, string> = {
   launch_post: "发布公告", hiring: "招聘", show_hn: "Show HN", paper: "论文", left_job: "离职创业", cohort: "孵化器名单", form_d: "Form D", star_velocity: "Star 增速", linkedin_post: "LinkedIn 帖子", x_post: "X 帖子", producthunt: "Product Hunt", web_mention: "网络佐证", lab_roster_change: "实验室名单变动", title_change: "职位变更",
   founder_market_fit: "创始人与市场匹配", tech_traction: "技术进展", identity: "个人特质", seed_person: "种子名单人物",
   love_space: "看好赛道", love_founder: "看好创始人", wrong_sector: "赛道不符", too_late: "太晚了", weak_founder_fit: "创始人匹配弱", not_ai_native: "非 AI 原生",
-  "Demo · Robotics and hardware": "示例 · 机器人与硬件", "Demo · AI infrastructure": "示例 · AI 基础设施", "Investor A": "投资人 A", "Investor B": "投资人 B", "Investor C": "投资人 C", security: "安全与验证",
+  "Demo · Robotics and hardware": "示例 · 机器人与硬件", "Demo · AI infrastructure": "示例 · AI 基础设施", note: "自述原因", "Investor A": "投资人 A", "Investor B": "投资人 B", "Investor C": "投资人 C", security: "安全与验证",
   "Verification and security for AI agents and AI-written code": "AI Agent 与 AI 代码的验证与安全",
   proves_by_running: "以实际运行证明", agent_runtime_controls: "Agent 运行时管控", code_verification: "AI 代码验证", open_source: "开源", works_across_agents: "跨 Agent 通用", telem_discover: "Telem 路由搜索发现",
   "Robotics and hardware, research lineage": "机器人与硬件，重研究背景", "AI infrastructure and developer tools, open-source pull": "AI 基础设施与开发者工具，重开源势能",
@@ -112,7 +112,7 @@ function memoryPanel() {
   const max = Math.max(...L.map((x) => Math.abs(x.points)), 1);
   const names = new Map(data.candidates.map((c: Candidate) => [c.id, nameOf(c)]));
   const rows = L.map((x) => `<div class="lrow"><span class="lname">${esc(feat(x.feature))}</span><span class="lbar"><i class="${x.points < 0 ? "neg" : "pos"}" style="width:${Math.round((Math.abs(x.points) / max) * 100)}%"></i></span><span class="m lval">${x.points > 0 ? "+" : ""}${x.points} ${T("pts", "分")}</span></div>`).join("");
-  const recent = mine.slice(-4).reverse().map((f) => `<li>${f.vote > 0 ? ICON.up : ICON.down}<b>${esc(names.get(f.candidate_id) ?? f.candidate_id)}</b> · ${esc(word(f.reason))}</li>`).join("");
+  const recent = mine.slice(-4).reverse().map((f) => `<li>${f.vote > 0 ? ICON.up : ICON.down}<b>${esc(names.get(f.candidate_id) ?? f.candidate_id)}</b> · ${esc(f.reason === "note" && f.note ? `"${f.note}"` : word(f.reason))}</li>`).join("");
   return `<div class="memory"><h3>${T(`What the engine has learned about ${name}`, `引擎对${name}的了解`)}</h3>
     <div class="memgrid"><div>${rows || `<p class="fine">${T("Votes so far have not shifted any preference.", "目前的投票尚未改变任何偏好。")}</p>`}<p class="fine">${T("Points a fully matching company now gains or loses for this investor, compared with the starting profile.", "与初始画像相比，完全匹配的公司现在对该投资人增加或减少的分数。")}</p></div>
     <div><ul class="recent">${recent}</ul><p class="fine">${mine.length} ${T(mine.length === 1 ? "event" : "events", "条反馈")}. ${where}.</p></div></div></div>`;
@@ -133,9 +133,9 @@ function row(r: ReturnType<typeof rank>[number], i: number, moved: number) {
   const isOpen = open.has(c.id);
   const sigs = c.signal_ids.map((id) => data.signals[id]).filter(Boolean);
   const why = r.why.map((w) => `<span class="why ${w.points < 0 ? "neg" : ""}">${esc(feat(w.feature))}<b>${w.points > 0 && w.feature !== "lower bound" ? "+" : ""}${w.points}</b></span>`).join("");
-  const voted = r.voted ? `<span class="voted ${r.voted.vote > 0 ? "pos" : "neg"}">${r.voted.vote > 0 ? ICON.up : ICON.down}${esc(word(r.voted.reason))}</span>` : "";
+  const voted = r.voted ? `<span class="voted ${r.voted.vote > 0 ? "pos" : "neg"}">${r.voted.vote > 0 ? ICON.up : ICON.down}${esc(r.voted.reason === "note" && r.voted.note ? `"${r.voted.note.slice(0, 48)}${r.voted.note.length > 48 ? "…" : ""}"` : word(r.voted.reason))}</span>` : "";
   const reasonPick = pending?.id === c.id
-    ? `<div class="reasons"><span class="eyebrow">${pending.vote > 0 ? T("Why yes", "看好的原因") : T("Why not", "不看好的原因")}</span>${Object.keys(REASONS).filter((k) => (pending!.vote > 0 ? k.startsWith("love") : !k.startsWith("love"))).map((k) => `<button class="pill" data-reason="${k}" data-id="${c.id}">${esc(word(k))}</button>`).join("")}<button data-cancel="1" class="link">${T("Cancel", "取消")}</button></div>` : "";
+    ? `<div class="reasons"><span class="eyebrow">${pending.vote > 0 ? T("Why yes", "看好的原因") : T("Why not", "不看好的原因")}</span>${Object.keys(REASONS).filter((k) => k !== "note" && (pending!.vote > 0 ? k.startsWith("love") : !k.startsWith("love"))).map((k) => `<button class="pill" data-reason="${k}" data-id="${c.id}">${esc(word(k))}</button>`).join("")}<form class="notef" data-note-form="1"><input type="text" maxlength="200" autocomplete="off" aria-label="${T("Your reason in your own words", "用自己的话说明原因")}" placeholder="${pending.vote > 0 ? T("Or say what you like, in your own words", "或用自己的话说说看好的原因") : T("Or say what puts you off, in your own words", "或用自己的话说说不看好的原因")}"><button type="submit" class="pill">${T("Send", "提交")}</button></form><button data-cancel="1" class="link">${T("Cancel", "取消")}</button></div>` : "";
   const shown = isOpen ? sigs : sigs.slice(0, 3);
   return `<article class="row ${isOpen ? "open" : ""}">
     <div class="rk"><span class="n">${String(i + 1).padStart(2, "0")}</span>${moved ? `<span class="move ${moved > 0 ? "up" : "down"}">${moved > 0 ? "▲" : "▼"} ${Math.abs(moved)}</span>` : ""}</div>
@@ -458,7 +458,17 @@ document.addEventListener("input", (e) => {
     if (g === "sectors" && t.checked) draft.avoid = draft.avoid.filter((x) => x !== t.value);
   }
 });
-document.addEventListener("submit", (e) => {
+document.addEventListener("submit", async (e) => {
+  const nf = e.target as HTMLFormElement;
+  if (nf.dataset?.noteForm) {
+    e.preventDefault();
+    const text = (nf.querySelector("input") as HTMLInputElement).value.trim().slice(0, 200);
+    if (!text || !pending) return;
+    const ev = { investor, candidate_id: pending.id, vote: pending.vote, reason: "note", note: text };
+    pending = null;
+    await sendFeedback(ev);
+    return render();
+  }
   if ((e.target as HTMLElement).id !== "onb") return;
   e.preventDefault();
   if (step < LAST) { step++; renderWizard(); }
