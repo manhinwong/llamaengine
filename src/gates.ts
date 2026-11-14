@@ -27,3 +27,27 @@ export function applyRaisedGate(cands: Candidate[]) {
   return cos.length;
 }
 
+// Fallback that needs no paid lookup: the signals themselves often state a round ("raised $30M led by ...").
+// Series A or later, or a stated round of $8M or more, leaves the pre-seed/seed digest. Smaller stated rounds stay, tagged.
+const ROUND = /\$\s?(\d+(?:\.\d+)?)\s?(k|m|mm|million|b|billion)\b[^.\n]{0,60}\b(pre-?seed|seed|series [a-e]|round|funding|financing)|\b(raised|raises|secures?|closes?|closed)\b[^.\n]{0,60}\$\s?(\d+(?:\.\d+)?)\s?(k|m|mm|million|b|billion)\b/i;
+const SERIES = /\bseries [a-e]\b/i;
+export function applyStatedRoundGate(cands: Candidate[], signals: Signal[]) {
+  const byId = new Map(signals.map((s) => [s.id, s]));
+  let moved = 0;
+  for (const c of cands.filter((c) => c.status === "digest")) {
+    for (const id of c.signal_ids) {
+      const s = byId.get(id);
+      const text = `${s?.title ?? ""} ${s?.raw ?? ""}`;
+      const m = text.match(ROUND);
+      if (!s || !m) continue;
+      const num = Number(m[1] ?? m[5]);
+      const unit = (m[2] ?? m[6] ?? "").toLowerCase();
+      const usd = num * (unit.startsWith("b") ? 1e9 : unit === "k" ? 1e3 : 1e6);
+      const stated = m[0].replace(/\s+/g, " ").slice(0, 80);
+      c.raised = { round: stated, date: s.date, source: s.url };
+      if (SERIES.test(text) || usd >= 8e6) { c.status = "already_raised"; moved++; }
+      break;
+    }
+  }
+  return moved;
+}
