@@ -51,6 +51,25 @@ let store: "shared" | "server" | "browser" = "browser";
 let space = "main";
 const mem = () => data.memory_store as { url: string; anon_key: string; table: string } | null;
 const memHeaders = () => ({ Authorization: `Bearer ${mem()!.anon_key}`, "Content-Type": "application/json" });
+const memGet = (ms: number) => fetch(`${mem()!.url}/api/database/records/${mem()!.table}?session=eq.${space}&order=at.asc&limit=1000`, { headers: memHeaders(), signal: AbortSignal.timeout(ms) });
+// The memory service can be asleep when the page opens. The page starts on browser storage at once,
+// and joins the shared store when the service answers, unless the visitor has already voted or made a profile locally.
+let waking = false;
+async function wakeMemory() {
+  if (waking) return;
+  waking = true;
+  for (let i = 0; i < 5 && store !== "shared"; i++) {
+    try {
+      const r = await memGet(30000);
+      if (r.ok) {
+        const rows = await r.json();
+        if (store !== "shared" && feedback.length === 0 && profiles.length === 0) { feedback = rows; store = "shared"; if (neutral()) await loadProfiles(); prevOrder = {}; render(); }
+        break;
+      }
+    } catch {}
+  }
+  waking = false;
+}
 async function loadFeedback() {
   if (mem()) {
     try {
@@ -61,12 +80,12 @@ async function loadFeedback() {
       // Opening a shared link (#m=...) joins that space on purpose.
       space = fromHash ?? saved ?? (Math.random().toString(36) + "00000000").slice(2, 10);
       if (space !== saved) try { localStorage.setItem("space", space); } catch {}
-      const r = await fetch(`${mem()!.url}/api/database/records/${mem()!.table}?session=eq.${space}&order=at.asc&limit=1000`, { headers: memHeaders() });
+      const r = await memGet(5000);
       if (!r.ok) throw new Error();
       feedback = await r.json();
       store = "shared";
       return;
-    } catch {}
+    } catch { void wakeMemory(); }
   }
   try {
     const r = await fetch("/api/feedback");

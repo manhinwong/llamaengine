@@ -10,7 +10,8 @@
     "ablation": "tsx src/ablation.ts",
     "costs": "tsx src/costs.ts",
     "serve": "tsx src/server.ts",
-    "export": "tsx src/server.ts export"
+    "export": "tsx src/server.ts export",
+    "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

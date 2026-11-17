@@ -153,7 +153,7 @@ npx tsx src/translate.ts
 Notes:
 - `src/translate.ts` writes Simplified Chinese copies of the score detail to `data/zh.json`, keyed by a hash of the English, so a re-run translates only new or changed text. The page shows them in 中文 mode and falls back to English. Scoring and ranking never read them. The copies in `sample/data.json` were machine-translated and checked only for preserved numbers.
 - Funding lookups and the backtest answer key use the Monid CLI (`@monid-ai/cli`), which needs its own account.
-- Shared investor memory is optional. Run `db/memory.sql` in an InsForge project and set `INSFORGE_URL` and `INSFORGE_ANON_KEY`. Without it, profiles and votes stay in the browser.
+- Shared investor memory is optional. `api/` is a small Node service that stores votes and profiles in Postgres (set `DATABASE_URL` and `ALLOWED_ORIGINS`; it creates its own tables, and only reads or writes one memory space at a time). `npm run build:site` builds the static page into `public/` and points it at that service when `MEMORY_API_URL` is set. Without it, profiles and votes stay in the browser. `db/memory.sql` is the earlier InsForge setup.
 - `seeds.local.json` (gitignored) can hold your own list of people to watch: `{"people":[{"name":"..."}]}`.
 
 ## Rules the code enforces
