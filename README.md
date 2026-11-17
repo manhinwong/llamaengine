@@ -2,7 +2,7 @@
 
 Finds US-based pre-seed and seed AI companies before they announce a round. It collects early signals, merges them per company, scores only what the web can show, and ranks the result for each investor, learning from their votes.
 
-Built at SearchHack (2026-11-14) on Telem and Tavily. Live demo: https://llamaengine.insforge.site
+Built at SearchHack (2026-11-14) on Telem and Tavily. Live demo: https://llamaengine.onrender.com
 
 ## What it does
 
