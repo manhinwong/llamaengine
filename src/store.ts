@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -49,6 +50,9 @@ export type Candidate = {
 export type DimScore = { level: number | "U"; rationale: string; claims: { text: string; label: Label; url: string }[] };
 export type Score = { candidate_id: string; dims: Record<string, DimScore>; P: number; C: number; lower: number; upper: number; scored_at: string };
 export type Feedback = { investor: string; candidate_id: string; vote: 1 | -1; reason: string; at: string; note?: string | null };
+
+// Display-only Chinese copies live in data/zh.json, keyed by a hash of the English text (see translate.ts).
+export const zhKey = (en: string) => createHash("sha1").update(en).digest("hex").slice(0, 16);
 
 const tables = ["investors", "seeds", "monitor_cursors", "signals", "candidates", "scores", "feedback"] as const;
 type Table = (typeof tables)[number];

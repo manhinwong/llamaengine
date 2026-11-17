@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DATA, PUBLIC_DEMO } from "./env.ts";
-import { read, type Candidate, type Score, type Signal, type Run } from "./store.ts";
+import { read, zhKey, type Candidate, type Score, type Signal, type Run } from "./store.ts";
 import { rubric, interval } from "./score.ts";
 import { PERSONAS, REASONS } from "./rank.ts";
 import { MONITOR_SPECS, loadMonitors } from "./monitors.ts";
@@ -14,9 +14,12 @@ export function buildData() {
   const dimsPublic = R.dimensions.map((d) => ({ key: d.key, label: d.label, weight: PUBLIC_DEMO || NEUTRAL ? 100 / R.dimensions.length : d.weight }));
   const RW = { ...R, dimensions: R.dimensions.map((d, i) => ({ ...d, weight: dimsPublic[i].weight })) };
   const cands = read<Candidate[]>("candidates");
-  const scores = read<Score[]>("scores").map((s) => ({ ...s, ...interval(s.dims, RW) }));
+  // Chinese copies are attached here for display. Scoring and ranking never read them.
+  const zh = read<Record<string, string>>("zh", {});
+  const z = (en?: string) => (en ? zh[zhKey(en)] : undefined);
+  const scores = read<Score[]>("scores").map((s) => ({ ...s, ...interval(s.dims, RW), dims: Object.fromEntries(Object.entries(s.dims).map(([k, d]) => [k, { ...d, rationale_zh: z(d.rationale), claims: d.claims.map((cl) => ({ ...cl, text_zh: z(cl.text) })) }])) }));
   const signals = read<Signal[]>("signals");
-  const shown = cands.filter((c) => c.status === "digest" || c.status === "already_raised");
+  const shown = cands.filter((c) => c.status === "digest" || c.status === "already_raised").map((c: any) => (c.raised?.round ? { ...c, raised: { ...c.raised, round_zh: z(c.raised.round) } } : c));
   // Watchlist: real startups seen in exactly one place so far. Not scored, not ranked, shown per sector.
   const sigById = new Map(signals.map((s) => [s.id, s]));
   const watch = cands.filter((c) => c.status === "gated_out" && c.sector !== "other" && c.signal_ids.some((id) => sigById.get(id)?.is_startup))

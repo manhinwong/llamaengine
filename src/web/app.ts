@@ -15,6 +15,7 @@ let lang: "en" | "cn" = (navigator.language || "en").toLowerCase().startsWith("z
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 const T = (en: string, cn: string) => (lang === "cn" ? cn : en);
+const zh = (en: string, cn?: string) => (lang === "cn" && cn ? cn : en);
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
 const num = (n: number) => n.toLocaleString("en-US");
@@ -22,7 +23,7 @@ const num = (n: number) => n.toLocaleString("en-US");
 const CN: Record<string, string> = {
   robotics: "机器人", hardware: "硬件", software_for_hardware: "硬件软件", ai_infra: "AI 基础设施", ai_app: "AI 应用", dev_tools: "开发者工具", other: "其他",
   launch_post: "发布公告", hiring: "招聘", show_hn: "Show HN", paper: "论文", left_job: "离职创业", cohort: "孵化器名单", form_d: "Form D", star_velocity: "Star 增速", linkedin_post: "LinkedIn 帖子", x_post: "X 帖子", producthunt: "Product Hunt", web_mention: "网络佐证", lab_roster_change: "实验室名单变动", title_change: "职位变更",
-  founder_market_fit: "创始人与市场匹配", tech_traction: "技术进展", identity: "个人特质", seed_person: "种子名单人物",
+  founder_market_fit: "创始人与市场匹配", tech_traction: "技术进展", identity: "个人特质", ambition: "雄心", product_value: "产品价值", gtm_traction: "市场进展", growth_path: "增长路径", investor_hype: "投资人关注度", seed_person: "种子名单人物",
   love_space: "看好赛道", love_founder: "看好创始人", wrong_sector: "赛道不符", too_late: "太晚了", weak_founder_fit: "创始人匹配弱", not_ai_native: "非 AI 原生",
   "Demo · Robotics and hardware": "示例 · 机器人与硬件", "Demo · AI infrastructure": "示例 · AI 基础设施", note: "自述原因", "Investor A": "投资人 A", "Investor B": "投资人 B", "Investor C": "投资人 C", security: "安全与验证",
   "Verification and security for AI agents and AI-written code": "AI Agent 与 AI 代码的验证与安全",
@@ -122,10 +123,10 @@ function dimRow(d: any, s: Score) {
   const v = s.dims[d.key];
   const lv = v?.level ?? "U";
   const pips = [1, 2, 3, 4, 5].map((i) => `<i class="${typeof lv === "number" && i <= lv ? "on" : ""}"></i>`).join("");
-  const claims = (v?.claims ?? []).map((c: any) => `<li><span class="tag t${c.label}" title="${LABEL()[c.label]}">${c.label}</span><span>${esc(c.text)} <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(host(c.url))}</a></span></li>`).join("");
+  const claims = (v?.claims ?? []).map((c: any) => `<li><span class="tag t${c.label}" title="${LABEL()[c.label]}">${c.label}</span><span>${esc(zh(c.text, c.text_zh))} <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(host(c.url))}</a></span></li>`).join("");
   return `<div class="dim ${lv === "U" ? "unknown" : ""}">
     <div class="dimhead"><span class="dimname">${esc(lang === "cn" ? CN[d.key] ?? d.label : d.label)}</span>${lv === "U" ? `<span class="ubadge">U · ${T("unknown before contact", "接触前未知")}</span>` : `<span class="pips">${pips}<em>${lv}/5</em></span>`}</div>
-    ${lv !== "U" && v?.rationale ? `<p>${esc(v.rationale)}</p>` : ""}${claims ? `<ul class="claims">${claims}</ul>` : ""}</div>`;
+    ${lv !== "U" && v?.rationale ? `<p>${esc(zh(v.rationale, v.rationale_zh))}</p>` : ""}${claims ? `<ul class="claims">${claims}</ul>` : ""}</div>`;
 }
 
 function row(r: ReturnType<typeof rank>[number], i: number, moved: number) {
@@ -144,7 +145,7 @@ function row(r: ReturnType<typeof rank>[number], i: number, moved: number) {
         <h3>${esc(nameOf(c))}</h3>
         <span class="sector">${esc(word(c.sector))}</span>
         ${c.domains[0] && !blind ? `<a class="site" href="https://${esc(c.domains[0])}" target="_blank" rel="noopener">${esc(c.domains[0])}</a>` : ""}
-        ${c.raised && c.status === "digest" ? `<span class="stated" title="${esc(c.raised.source)}">${T("stated", "自述")}: ${esc(c.raised.round)}</span>` : ""}
+        ${c.raised && c.status === "digest" ? `<span class="stated" title="${esc(c.raised.source)}">${T("stated", "自述")}: ${esc(zh(c.raised.round, (c.raised as any).round_zh))}</span>` : ""}
         ${voted}
       </div>
       <div class="whyrow"><span class="eyebrow">${T("Why ranked here", "排序依据")}</span>${why}</div>
@@ -200,7 +201,7 @@ function machinery() {
       <h3 class="gap">${T("Spend so far", "累计花费")}</h3>
       <table><tbody>${spendRows.map(([k, v]) => `<tr><td>${esc(word(k))}</td><td class="m r">$${(v as number).toFixed(2)}</td></tr>`).join("")}<tr class="total"><td>${T("Total", "合计")}</td><td class="m r">$${total.toFixed(2)}</td></tr></tbody></table>
       <p class="fine">${c.digest ? T(`$${(total / c.digest).toFixed(2)} per digest company, from list prices.`, `按公开价估算，每家入选公司 $${(total / c.digest).toFixed(2)}。`) : ""}</p>
-      ${raised.length ? `<h3 class="gap">${T("Already raised", "已融资")}</h3><table><tbody>${raised.slice(0, 12).map((x: Candidate) => `<tr><td>${esc(nameOf(x))}</td><td class="m r">${esc((x.raised?.round ?? "").slice(0, 28))}</td></tr>`).join("")}</tbody></table>` : ""}
+      ${raised.length ? `<h3 class="gap">${T("Already raised", "已融资")}</h3><table><tbody>${raised.slice(0, 12).map((x: Candidate) => `<tr><td>${esc(nameOf(x))}</td><td class="m r">${esc(zh(x.raised?.round ?? "", (x.raised as any)?.round_zh).slice(0, 28))}</td></tr>`).join("")}</tbody></table>` : ""}
     </div>
   </div>`;
 }

@@ -51,6 +51,7 @@ flowchart LR
 | Gates | `src/gates.ts`, `src/locate.ts` |
 | Score | `src/score.ts` |
 | Rank, learn, compare | `src/rank.ts` |
+| Chinese copies of score detail (display only) | `src/translate.ts` |
 | Backtest | `src/backtest.ts` |
 | With vs without Telem | `src/ablation.ts` |
 | Costs and model budget | `src/costs.ts`, `src/claude.ts` |
@@ -145,7 +146,12 @@ npx tsx src/backtest.ts
 npx tsx src/costs.ts
 ```
 
+```bash
+npx tsx src/translate.ts
+```
+
 Notes:
+- `src/translate.ts` writes Simplified Chinese copies of the score detail to `data/zh.json`, keyed by a hash of the English, so a re-run translates only new or changed text. The page shows them in 中文 mode and falls back to English. Scoring and ranking never read them. The copies in `sample/data.json` were machine-translated and checked only for preserved numbers.
 - Funding lookups and the backtest answer key use the Monid CLI (`@monid-ai/cli`), which needs its own account.
 - Shared investor memory is optional. Run `db/memory.sql` in an InsForge project and set `INSFORGE_URL` and `INSFORGE_ANON_KEY`. Without it, profiles and votes stay in the browser.
 - `seeds.local.json` (gitignored) can hold your own list of people to watch: `{"people":[{"name":"..."}]}`.
