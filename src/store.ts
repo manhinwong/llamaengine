@@ -43,7 +43,8 @@ export type Candidate = {
   tags?: string[];
   seed_hit: boolean;
   gate: { pass: boolean; reason: string };
-  status: "digest" | "already_raised" | "gated_out" | "not_us" | "location_unconfirmed";
+  // "digest" is the verified list (strict gate); "early" is the early, unverified lane.
+  status: "digest" | "early" | "already_raised" | "gated_out" | "not_us" | "location_unconfirmed";
   location?: { country: string | null; us: boolean | null; place: string | null; quote: string | null; url: string | null } | null;
   raised?: { round: string; date: string | null; source: string } | null;
 };

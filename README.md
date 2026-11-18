@@ -110,6 +110,27 @@ This shows the method, not a lead-time claim. 73% of Telem results carried no pu
 
 Bulk extraction runs on a small model and only scoring uses a large one: the same extraction load cost $6.35 on the large model and $0.018 on the small one. Model calls are refused past `CLAUDE_BUDGET_USD` in total or `CLAUDE_RUN_BUDGET_USD` per run.
 
+## Stricter gate (2026-11-18)
+
+The hackathon gate counted any two signal families. Reviewing the 56-company digest showed the second signal was often the company's own site or a scraped profile, which is not independent confirmation. The live demo now uses a stricter rule; the numbers above stay as the hackathon record.
+
+- **Source tiers** (`src/tiers.ts`): the tier comes from where a record lives and whose it is. Primary: Form D, GitHub activity, a Hacker News thread, a job post on Ashby, Lever, Greenhouse or a YC jobs page, a paper. Self-published: the company's own site and its own or its founders' posts. Third-party: a LinkedIn or X post by someone who is not the company or a known founder. Aggregators, news-repost accounts, press, press releases and accelerator pages do not count.
+- **Verified digest**: two signals from different families, at least one primary.
+- **Free primary lookup** (`src/lookup.ts`): Hacker News by website, GitHub organisation by website, public job boards, Form D by name. A match on name alone is recorded but never counts.
+- **Early, unverified lane**: one primary record or a strong discovery post. Ranked by signal strength (records, credibility, recency), with no rubric score unless one is requested on the local server.
+- **Widely seen**: companies from YC and other well-known cohorts carry a chip and rank 10 points lower unless the investor switches that off. Scores do not change.
+- **Apply it** to an existing store: `npx tsx src/v2.ts gate`, then `ghloc`, `akta` (funding check through Monid) and `score`.
+
+| Step | Count |
+|---|---|
+| Signals | 2,032 |
+| Companies | 452 |
+| Pass the strict gate | 83 |
+| Verified, in the digest | 45 |
+| Early, unverified | 257 |
+
+Limits: 38 of the 45 pass on one primary record plus a self-published signal. `src/resolve.ts` and `pipeline.ts build` still apply the older gate, so a full rebuild needs `v2.ts gate` run after it.
+
 ## Run it
 
 The page works straight from a clone, using the sample data:

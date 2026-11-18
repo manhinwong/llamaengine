@@ -53,7 +53,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 @media (max-width:720px){#thesis{grid-template-columns:minmax(0,1fr)}.legend{grid-auto-flow:column;justify-content:start;gap:16px;white-space:normal}}
 
 /* funnel strip */
-#funnel{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:28px 0 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+#funnel{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin:28px 0 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 #funnel div{padding:16px 16px 14px;border-left:1px solid var(--border);position:relative}
 #funnel div:first-child{border-left:0;padding-left:0}
 #funnel b{display:block;font:500 28px/1.1 var(--font-mono);font-variant-numeric:tabular-nums}
@@ -209,6 +209,9 @@ footer span{color:var(--muted)}
 .bench h3.gap{margin-top:28px}
 
 .headbtns{display:flex;gap:16px;margin-left:auto;white-space:nowrap}
+@media (max-width:720px){.headbtns{flex-wrap:wrap;gap:8px 16px;margin-left:0;white-space:normal}}
+@media (max-width:720px){.legend{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}}
+.erow .sigs time{white-space:nowrap}
 .persona.add{border-style:dashed}
 .onb{margin:14px 0 4px;padding:18px 20px;border:1.5px solid var(--text);border-radius:10px;background:var(--paper)}
 .onb h3{margin:0 0 4px;font:700 16px var(--font-display)}
@@ -241,6 +244,18 @@ button.primary:hover{background:var(--accent-deep)}
 
 .watch{margin:28px 0 0;padding-top:20px;border-top:1.5px solid var(--text)}
 .watch h3{margin:0 0 4px;font:700 16px var(--font-display)}
+.seen{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.unv{font:700 10px/1 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--signal-yellow);border:1px solid currentColor;border-radius:999px;padding:4px 8px}
+.el{list-style:none;margin:12px 0 10px;padding:0}
+.erow{display:grid;grid-template-columns:36px minmax(0,1fr) 132px;gap:12px;padding:12px 0;border-top:1px solid var(--border)}
+.erow .en{color:var(--muted);font-size:13px;padding-top:2px}
+.eh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}.eh b{font-size:15px}.eh b a{color:var(--text)}
+.ew{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+.erow .sigs{margin-top:6px}
+.tier{font-style:normal;font-size:11px;color:var(--muted);margin-left:8px}
+.es{text-align:right;font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.es b{font-size:22px;color:var(--text);font-weight:500}
+@media (max-width:720px){.erow{grid-template-columns:28px minmax(0,1fr)}.es{grid-column:2;flex-direction:row;align-items:baseline;gap:8px;text-align:left}}
 .wl{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 24px}
 .wl li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
 .wl li b{font-size:14px}.wl li b a{color:var(--text)}

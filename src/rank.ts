@@ -81,7 +81,10 @@ export function intervalFor(s: Score, dimWeights?: Record<string, number>): Scor
   return { ...s, P: +P.toFixed(1), C: +C.toFixed(1), lower: +(P + (100 - C) / 5).toFixed(1), upper: +(P + (100 - C)).toFixed(1) };
 }
 
-export function rank(investor: string, cands: Candidate[], scores: Score[], feedback: Feedback[]) {
+// Companies from YC and other well-known cohorts are ranked down by default, since most funds have already seen them.
+// An investor can opt in to rank them at full value. The score itself never changes.
+export const WIDELY_SEEN_PENALTY = 10;
+export function rank(investor: string, cands: Candidate[], scores: Score[], feedback: Feedback[], opts: { includeSeen?: boolean } = {}) {
   const cm = new Map(cands.map((c) => [c.id, c]));
   const dw = PERSONAS[investor]?.dimWeights;
   const sm = new Map(scores.map((s) => [s.candidate_id, intervalFor(s, dw)]));
@@ -96,6 +99,8 @@ export function rank(investor: string, cands: Candidate[], scores: Score[], feed
       // founder's own claims back it. Ambition is excluded: it is scored from what a company says about itself.
       const peak = Object.entries(s.dims).filter(([k, d]) => k !== "ambition" && typeof d.level === "number" && (d.level as number) >= 4).sort((a, b) => (b[1].level as number) - (a[1].level as number) || Number(b[1].claims.some((x) => x.label === "V")) - Number(a[1].claims.some((x) => x.label === "V")))[0];
       if (peak) contrib.push({ feature: `standout:${peak[0]}`, points: +(((peak[1].level as number) - 3) * STANDOUT * (peak[1].claims.some((x) => x.label === "V") ? 1 : 0.5)).toFixed(2) });
+      const ws = (c as any).widely_seen;
+      if (!opts.includeSeen && (ws?.yc || ws?.other)) contrib.push({ feature: "widely seen", points: -WIDELY_SEEN_PENALTY });
       const last = feedback.filter((e) => e.investor === investor && e.candidate_id === c.id).slice(-1)[0];
       if (last) contrib.push({ feature: last.vote > 0 ? "your thumbs up" : "your thumbs down", points: last.vote * OWN_VOTE });
       const fit = contrib.reduce((a, b) => a + b.points, 0);

@@ -31,11 +31,11 @@ const CN: Record<string, string> = {
   "Robotics and hardware, research lineage": "机器人与硬件，重研究背景", "AI infrastructure and developer tools, open-source pull": "AI 基础设施与开发者工具，重开源势能",
   stealth_launch: "隐身期发布", founding_engineer: "创始工程师招聘", arxiv_spinout: "arXiv 论文转创业", left_to_start: "离职创业", hardware_stealth: "硬件隐身期招聘", accelerator_cohort: "孵化器新批次", arxiv_seed: "种子名单论文",
   telem_linkedin: "Telem · LinkedIn 帖子", telem_x: "Telem · X", telem_producthunt: "Telem · Product Hunt", telem_monitor: "Telem Monitors", telem_search: "Telem 搜索佐证", tavily_map: "Tavily Map 差异", edgar_formd: "SEC Form D", github: "GitHub Star 增速", hn: "Show HN",
-  telem: "Telem", tavily: "Tavily", claude: "Claude", monid: "Monid",
+  telem: "Telem", tavily: "Tavily", claude: "Claude", monid: "Monid", ats_lookup: "招聘页检索",
 };
-const EN: Record<string, string> = { robotics: "Robotics", hardware: "Hardware", software_for_hardware: "Software for hardware", security: "Security and verification", ai_infra: "AI infrastructure", ai_app: "AI applications", dev_tools: "Developer tools", other: "Other", launch_post: "Launch post", hiring: "First hires", show_hn: "Show HN", paper: "Paper", left_job: "Left to start a company", star_velocity: "GitHub star velocity", form_d: "SEC Form D", linkedin_post: "LinkedIn post", x_post: "X post", producthunt: "Product Hunt", cohort: "Accelerator cohort", web_mention: "Web mention", proves_by_running: "Proves by running", agent_runtime_controls: "Agent runtime controls", code_verification: "AI-code verification", open_source: "Open source", works_across_agents: "Works across agents", telem_linkedin: "Telem · LinkedIn posts", telem_x: "Telem · X", telem_producthunt: "Telem · Product Hunt", telem_monitor: "Telem Monitors", telem_search: "Telem search corroboration", telem_discover: "Telem routed discovery", tavily_map: "Tavily Map diff", edgar_formd: "SEC Form D", github: "GitHub star velocity", hn: "Show HN", telem: "Telem", tavily: "Tavily", claude: "Claude", monid: "Monid" };
+const EN: Record<string, string> = { robotics: "Robotics", hardware: "Hardware", software_for_hardware: "Software for hardware", security: "Security and verification", ai_infra: "AI infrastructure", ai_app: "AI applications", dev_tools: "Developer tools", other: "Other", launch_post: "Launch post", hiring: "First hires", show_hn: "Show HN", paper: "Paper", left_job: "Left to start a company", star_velocity: "GitHub star velocity", form_d: "SEC Form D", linkedin_post: "LinkedIn post", x_post: "X post", producthunt: "Product Hunt", cohort: "Accelerator cohort", web_mention: "Web mention", proves_by_running: "Proves by running", agent_runtime_controls: "Agent runtime controls", code_verification: "AI-code verification", open_source: "Open source", works_across_agents: "Works across agents", telem_linkedin: "Telem · LinkedIn posts", telem_x: "Telem · X", telem_producthunt: "Telem · Product Hunt", telem_monitor: "Telem Monitors", telem_search: "Telem search corroboration", telem_discover: "Telem routed discovery", tavily_map: "Tavily Map diff", edgar_formd: "SEC Form D", github: "GitHub star velocity", hn: "Show HN", telem: "Telem", tavily: "Tavily", claude: "Claude", monid: "Monid", ats_lookup: "Job board lookup" };
 const word = (k: string) => (lang === "cn" ? CN[k] ?? k.replace(/_/g, " ") : EN[k] ?? REASONS[k]?.label ?? k.replace(/_/g, " "));
-const feat = (k: string): string => (k === "lower bound" ? T("Lower bound", "保守下界") : k.startsWith("standout:") ? `${T("Standout", "突出项")}: ${(data.dims.find((d: any) => d.key === k.slice(9))?.label && lang !== "cn" ? data.dims.find((d: any) => d.key === k.slice(9)).label : word(k.slice(9))).toLowerCase()}` : word(k.replace(/^(sector|signal|dim|seed|tag):/, "")));
+const feat = (k: string): string => (k === "widely seen" ? T("Widely seen", "多数基金已见") : k === "lower bound" ? T("Lower bound", "保守下界") : k.startsWith("standout:") ? `${T("Standout", "突出项")}: ${(data.dims.find((d: any) => d.key === k.slice(9))?.label && lang !== "cn" ? data.dims.find((d: any) => d.key === k.slice(9)).label : word(k.slice(9))).toLowerCase()}` : word(k.replace(/^(sector|signal|dim|seed|tag):/, "")));
 const LABEL = () => ({ F: T("Founder claim", "创始人自述"), V: T("Verified record", "已核实记录"), A: T("Agent inference", "模型推断") }) as Record<string, string>;
 
 const ICON = {
@@ -164,6 +164,7 @@ function row(r: ReturnType<typeof rank>[number], i: number, moved: number) {
         <h3>${esc(nameOf(c))}</h3>
         <span class="sector">${esc(word(c.sector))}</span>
         ${c.domains[0] && !blind ? `<a class="site" href="https://${esc(c.domains[0])}" target="_blank" rel="noopener">${esc(c.domains[0])}</a>` : ""}
+        ${seenChip(c)}
         ${c.raised && c.status === "digest" ? `<span class="stated" title="${esc(c.raised.source)}">${T("stated", "自述")}: ${esc(zh(c.raised.round, (c.raised as any).round_zh))}</span>` : ""}
         ${voted}
       </div>
@@ -228,6 +229,11 @@ function machinery() {
 // ---- Open (non-branded) mode: investors are made by the people using the page ----
 const neutral = () => data?.brand === "neutral";
 let blind = false;
+// Per investor: rank YC and other well-known cohort companies at full value instead of ranking them down.
+const seenKey = () => `seen:${investor}`;
+const includeSeen = () => { try { return localStorage.getItem(seenKey()) === "1"; } catch { return false; } };
+let earlyAll = false;
+let scoring: string | null = null;
 let onboarding = false;
 type Prefs = { sectors: string[]; avoid: string[]; signals: string[]; tags: string[]; dims: Record<string, number> };
 type Profile = { id: string; name: string; prefs: Prefs };
@@ -369,6 +375,28 @@ function comparePanel() {
   return `<div class="compare"><h3>${T("Compare investors", "投资人对比")}</h3><p class="fine">${T("Each bar is the number of companies two investors share in their top lists after one more vote, replayed from the stored events. Falling bars mean their tastes are separating.", "每根柱表示再多一次投票后，两位投资人榜单中共同公司的数量，由已存事件回放得出。柱子变矮说明两人的偏好在分化。")}</p>${rows}</div>`;
 }
 
+const seenChip = (c: any) => (c.widely_seen?.yc || c.widely_seen?.other ? `<span class="seen" title="${T("From YC or another well-known cohort, so most funds have already seen it", "来自 YC 或其他知名加速器，多数基金已经看过")}">${T("widely seen", "多数基金已见")}${c.widely_seen.yc ? " · YC" : ""}</span>` : "");
+const TIER = (): Record<string, string> => ({ primary: T("primary record", "一手记录"), self: T("self-published", "公司自述"), third_party: T("third-party post", "第三方帖子"), aggregator: T("aggregator, not counted", "聚合页，不计入"), unlisted: T("not counted", "不计入") });
+const WHY_CN: Record<string, string> = { hn: "Hacker News", github: "GitHub", form_d: "SEC Form D", ats_job: "招聘系统职位", paper: "论文", "third-party post": "第三方帖子", "seen in the last 30 days": "30 天内出现", "seed-list person": "种子名单人物" };
+const whyWord = (w: string) => { const nameOnly = / \(matched by name\)$/.test(w); const k = w.replace(/ \(matched by name\)$/, ""); const base = lang === "cn" ? WHY_CN[k] ?? word(k) : ({ hn: "Hacker News", github: "GitHub", form_d: "SEC Form D", ats_job: "Job post", paper: "Paper" } as Record<string, string>)[k] ?? (EN[k] ?? k); return base + (nameOnly ? T(" (matched by name)", "（仅按名称匹配）") : ""); };
+// Early, unverified lane: its own list, ranked by signal strength. No rubric score unless someone asks for one.
+function earlyPanel() {
+  const all: any[] = data.early ?? [];
+  if (!all.length) return "";
+  const shown = earlyAll ? all : all.slice(0, 20);
+  const rows = shown.map((c, i) => {
+    const sigs = c.signal_ids.map((id: string) => data.signals[id]).filter(Boolean).slice(0, 3);
+    const sc = data.early_scores?.[c.id];
+    const nm = esc(nameOf(c));
+    return `<li class="erow"><span class="en m">${String(i + 1).padStart(2, "0")}</span><div class="eb">
+      <div class="eh"><b>${!blind && c.domains[0] ? `<a href="https://${esc(c.domains[0])}" target="_blank" rel="noopener">${nm}</a>` : nm}</b><span class="sector">${esc(word(c.sector))}</span>${seenChip(c)}<span class="unv">${T("unverified", "未核实")}</span></div>
+      <div class="ew">${c.strength.why.map((w: string) => `<span class="why">${esc(whyWord(w))}</span>`).join("")}</div>
+      <ul class="sigs">${sigs.map((x: any) => `<li><span class="tag t${x.label}" title="${LABEL()[x.label]}">${x.label}</span><span>${blind ? esc(word(x.signal_type)) : `<a href="${esc(x.url)}" target="_blank" rel="noopener" title="${esc(x.text)}">${esc(word(x.signal_type))} · ${esc(host(x.url))}</a>`}<em class="tier">${esc(TIER()[x.tier] ?? "")}</em></span><time>${x.date ? esc(x.date.slice(0, 10)) : T("undated", "无日期")}</time></li>`).join("")}</ul>
+    </div><div class="es"><b class="m">${c.strength.points}</b><span>${T("signal strength", "信号强度")}</span>${sc ? `<span class="m">${T("rubric lower bound", "评分下界")} ${sc.lower}</span>` : data.can_score ? `<button class="link" data-score="${c.id}" ${scoring ? "disabled" : ""}>${scoring === c.id ? T("Scoring…", "评分中…") : T("Score now", "立即评分")}</button>` : `<span>${T("scored on request", "按需评分")}</span>`}</div></li>`;
+  }).join("");
+  return `<div class="watch early"><h3>${T("Early, unverified", "早期线索（未核实）")}</h3><p class="fine">${T(`${num(all.length)} companies have one primary record or a strong discovery post, but not the two independent signals the list above requires. They are ranked by signal strength: how many records, how credible, how recent. They have no rubric score unless one is requested.`, `共 ${num(all.length)} 家公司只有一条一手记录或一条较强的发现帖，尚未达到上方名单要求的两个独立信号。按信号强度排序：记录数量、可信度与时效。除非有人提出，否则不做评分。`)}</p><ul class="el">${rows}</ul>${all.length > 20 ? `<button class="link" data-early-all="1">${earlyAll ? T("Show the top 20", "只看前 20 家") : T(`Show all ${num(all.length)}`, `显示全部 ${num(all.length)} 家`)}</button>` : ""}</div>`;
+}
+
 function watchlistPanel() {
   const all: any[] = data.watchlist ?? [];
   if (!all.length) return "";
@@ -419,7 +447,7 @@ function benchmarks() {
 }
 
 function render() {
-  const ranked = data.scores.length ? rank(investor, data.candidates, data.scores, feedback) : [];
+  const ranked = data.scores.length ? rank(investor, data.candidates, data.scores, feedback, { includeSeen: includeSeen() }) : [];
   const before = prevOrder[investor] ?? [];
   const c = data.counts;
   document.documentElement.lang = lang === "cn" ? "zh-CN" : "en";
@@ -427,14 +455,14 @@ function render() {
   $("#btn-en").classList.toggle("active", lang === "en");
   $("#btn-cn").classList.toggle("active", lang === "cn");
 
-  blindIx = new Map([...data.candidates].sort((a: Candidate, b: Candidate) => a.id.localeCompare(b.id)).map((x: Candidate, i: number) => [x.id, i]));
+  blindIx = new Map([...data.candidates, ...(data.early ?? [])].sort((a: Candidate, b: Candidate) => a.id.localeCompare(b.id)).map((x: Candidate, i: number) => [x.id, i]));
   $("#pub").textContent = neutral() ? T("Open Sourcing Engine · built at SearchHack", "开放版 Sourcing Engine · SearchHack 作品") : T("Sourcing Engine · SearchHack showcase", "Sourcing Engine · SearchHack 展示项目");
   $("#title").textContent = T("Founders before the press release", "在新闻稿之前找到创始人");
   $("#sub").textContent = T("Telem Monitors and pinned searches collect early signals. Signals are merged per company and each company is scored only on what the web can show.", "Telem Monitors 与指定来源搜索持续收集早期信号，按公司归并后，只对网上可验证的部分评分。");
   $("#stamp").innerHTML = `${esc(new Date(data.generated_at).toISOString().slice(0, 16).replace("T", " "))} UTC<br>${data.public_demo ? T("Public demo mode", "公开演示模式") : T("Internal mode", "内部模式")}`;
   $("#thesis").innerHTML = `<p>${T("Every claim is labeled by where it comes from: F is the founder's own claim, V is a verified record, A is the agent's inference. A rubric dimension with no public evidence is marked U and left unscored. Companies are ranked by the low end of their score range.", "每条论据都标注来源：F 为创始人自述，V 为已核实记录，A 为模型推断。没有公开证据的评分维度标为 U，不予打分。公司按分数区间的下限排序。")}</p>
     <div class="legend"><span><i class="tag tF">F</i>${LABEL().F}</span><span><i class="tag tV">V</i>${LABEL().V}</span><span><i class="tag tA">A</i>${LABEL().A}</span><span><i class="tag tU">U</i>${T("Unknown, not scored", "未知，不打分")}</span></div>`;
-  $("#funnel").innerHTML = [[c.signals, T("signals ingested", "条信号")], [c.candidates, T("companies after entity resolution", "家公司（实体归并后）")], [c.candidates - c.gated_out, T("pass the two-signal gate", "家通过双信号门槛")], [c.already_raised, T("moved to already raised", "家已融资，移出")], [(c.not_us ?? 0) + (c.location_unconfirmed ?? 0), T("not confirmed US-based", "家未确认在美国")], [c.digest, T("US-based, in the digest", "家美国公司进入名单")]]
+  $("#funnel").innerHTML = [[c.signals, T("signals ingested", "条信号")], [c.candidates, T("companies after entity resolution", "家公司（实体归并后）")], [c.strict_pass ?? c.candidates - c.gated_out, T("pass the strict gate: two signals, one a primary record", "家通过严格门槛：两个信号，其一为一手记录")], [c.already_raised, T("already raised or out of range", "家已融资或超出范围")], [(c.not_us ?? 0) + (c.location_unconfirmed ?? 0), T("not confirmed US-based", "家未确认在美国")], [c.digest, T("verified, in the digest", "家已核实，进入名单")], [c.early ?? 0, T("early, unverified", "家早期线索（未核实）")]]
     .map(([n, l], i) => `<div class="${i === 5 ? "final" : ""}"><b>${num(n as number)}</b><span>${l}</span></div>`).join("");
 
   $("#h-digest").textContent = T("The digest", "入选名单");
@@ -443,14 +471,14 @@ function render() {
   $("#tabs").innerHTML = Object.entries(PERSONAS).map(([k, v]) => `<button class="persona ${k === investor ? "active" : ""}" data-investor="${k}"><b>${esc(word(v.name))}</b><span>${esc(lang === "cn" ? CN[v.blurb] ?? v.blurb : v.blurb)}</span></button>`).join("") + (neutral() ? `<button class="persona add" data-new="1"><b>+ ${T("New investor", "新建投资人")}</b><span>${T("Set your own preferences", "设置自己的偏好")}</span></button>` : "");
   const n = feedback.filter((f) => f.investor === investor).length;
   const pname = PERSONAS[investor]?.name ?? T("no investor yet", "尚无投资人");
-  $("#listhead").innerHTML = `<p>${T(`Ranked by the lower bound, a bonus for one standout dimension, and ${pname}'s learned fit. ${data.weights_note}.`, `按保守下界、单项突出加分与${word(pname)}的偏好修正排序。${neutral() ? "使用您自己的评分权重" : data.public_demo ? "演示用等权重" : "工作草案权重"}。`)} <span class="m">${n} ${T(n === 1 ? "feedback event" : "feedback events", "条反馈")}</span></p><span class="headbtns"><button class="link" data-blind="1" aria-pressed="${blind}">${blind ? T("Show company names", "显示公司名称") : T("Hide company names", "隐藏公司名称")}</button>${n ? `<button id="reset" class="link">${T("Reset feedback", "清空反馈")}</button>` : ""}</span>`;
+  $("#listhead").innerHTML = `<p>${T(`Ranked by the lower bound, a bonus for one standout dimension, and ${pname}'s learned fit. ${data.weights_note}.`, `按保守下界、单项突出加分与${word(pname)}的偏好修正排序。${neutral() ? "使用您自己的评分权重" : data.public_demo ? "演示用等权重" : "工作草案权重"}。`)} <span class="m">${n} ${T(n === 1 ? "feedback event" : "feedback events", "条反馈")}</span></p><span class="headbtns"><button class="link" data-seen="1" aria-pressed="${includeSeen()}" title="${T("Companies from YC and other well-known cohorts are ranked down by default", "来自 YC 等知名加速器的公司默认降低排序")}">${includeSeen() ? T("Widely seen: full rank", "已见公司：正常排序") : T("Widely seen: ranked down", "已见公司：降低排序")}</button><button class="link" data-blind="1" aria-pressed="${blind}">${blind ? T("Show company names", "显示公司名称") : T("Hide company names", "隐藏公司名称")}</button>${n ? `<button id="reset" class="link">${T("Reset feedback", "清空反馈")}</button>` : ""}</span>`;
   let memEl = document.getElementById("memory");
   if (!memEl) { memEl = document.createElement("div"); memEl.id = "memory"; $("#listhead").after(memEl); }
   memEl.innerHTML = memoryPanel();
   renderWizard();
   let cmpEl = document.getElementById("compare");
   if (!cmpEl) { cmpEl = document.createElement("div"); cmpEl.id = "compare"; $("#list").after(cmpEl); }
-  cmpEl.innerHTML = watchlistPanel() + comparePanel();
+  cmpEl.innerHTML = earlyPanel() + watchlistPanel() + comparePanel();
   $("#list").innerHTML = ranked.length
     ? ranked.map((r, i) => { const was = before.indexOf(r.candidate.id); return row(r, i, was >= 0 ? was - i : 0); }).join("")
     : `<div class="empty"><b>${T("Scoring is still running.", "评分仍在进行。")}</b><span>${T(`${num(c.digest)} companies passed the gates and are waiting for a score. Reload in a minute.`, `${num(c.digest)} 家公司已通过门槛，等待评分。请稍后刷新。`)}</span></div>`;
@@ -511,6 +539,13 @@ document.addEventListener("click", async (e) => {
   if (t.dataset.preset) { draftPreset = t.dataset.preset; const w = PRESETS[draftPreset].w; draft.dims = Object.fromEntries(data.dims.map((d: any) => [d.key, w[d.key] ?? 12.5])); return renderWizard(); }
   if (t.dataset.onbCancel) { onboarding = false; return render(); }
   if (t.dataset.blind) { blind = !blind; return render(); }
+  if (t.dataset.seen) { try { localStorage.setItem(seenKey(), includeSeen() ? "0" : "1"); } catch {} prevOrder = {}; return render(); }
+  if (t.dataset.earlyAll) { earlyAll = !earlyAll; return render(); }
+  if (t.dataset.score) {
+    scoring = t.dataset.score; render();
+    try { const r = await fetch(`/api/score?id=${scoring}`, { method: "POST" }); if (r.ok) data = await (await fetch("/data.json")).json(); } catch {}
+    scoring = null; return render();
+  }
   if (t.dataset.toggle) { open.has(t.dataset.toggle) ? open.delete(t.dataset.toggle) : open.add(t.dataset.toggle); return render(); }
   if (t.dataset.vote) { pending = { id: t.dataset.id!, vote: Number(t.dataset.vote) as 1 | -1 }; return render(); }
   if (t.dataset.cancel) { pending = null; return render(); }

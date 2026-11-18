@@ -26,7 +26,7 @@ const json = (res: any, code: number, body: unknown) => { res.writeHead(code, { 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://x");
   // A fresh clone has no store yet: serve the bundled sample so the page works without any keys.
-  if (url.pathname === "/data.json") return json(res, 200, existsSync(join(ROOT, "data", "candidates.json")) ? buildData() : JSON.parse(readFileSync(join(ROOT, "sample", "data.json"), "utf8")));
+  if (url.pathname === "/data.json") return json(res, 200, existsSync(join(ROOT, "data", "candidates.json")) ? { ...buildData(), can_score: true } : JSON.parse(readFileSync(join(ROOT, "sample", "data.json"), "utf8")));
   if (url.pathname === "/api/feedback" && req.method === "GET") return json(res, 200, read<Feedback[]>("feedback"));
   if (url.pathname === "/api/feedback" && req.method === "POST") {
     let body = "";
@@ -39,6 +39,23 @@ createServer(async (req, res) => {
       write("feedback", all);
       return json(res, 200, all);
     } catch { return json(res, 400, { error: "bad json" }); }
+  }
+  if (url.pathname === "/api/score" && req.method === "POST") {
+    // Early-lane companies are scored only when someone asks, one at a time, so the lane cannot run up the model bill.
+    const id = url.searchParams.get("id") ?? "";
+    const cands = read<any[]>("candidates");
+    const c = cands.find((x) => x.id === id && (x.status === "early" || x.status === "digest"));
+    if (!c) return json(res, 404, { error: "unknown company" });
+    const all = read<any[]>("scores");
+    if (!all.some((s) => s.candidate_id === id)) {
+      try {
+        const { scoreCandidates } = await import("./score.ts");
+        const fresh = await scoreCandidates([c], read("signals"), {});
+        if (!fresh.length) return json(res, 502, { error: "no score returned (budget cap or model refusal)" });
+        write("scores", [...all, { ...fresh[0], n_signals: c.signal_ids.length }]);
+      } catch (e: any) { return json(res, 502, { error: String(e.message).slice(0, 160) }); }
+    }
+    return json(res, 200, buildData().early_scores?.[id] ?? { ok: true });
   }
   if (url.pathname === "/api/feedback" && req.method === "DELETE") { write("feedback", []); return json(res, 200, []); }
   const file = join(PUB, url.pathname === "/" ? "index.html" : url.pathname.replace(/\.\./g, ""));

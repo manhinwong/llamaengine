@@ -30,7 +30,8 @@ export async function locate(cands: Candidate[], signals: Signal[]): Promise<Rec
     cache[c.id] = { country: grounded ? out.country : null, us: grounded ? US.test(out.country!.trim()) : null, place: grounded ? out.place : null, quote: grounded ? out.quote : null, url: grounded ? out.url : null, n: c.signal_ids.length };
   });
   // Second pass: companies whose own signals state no location get one routed Telem search.
-  const unknown = cands.filter((c) => cache[c.id] && cache[c.id].us === null && !(cache[c.id] as any).searched);
+  // LOCATE_NO_SEARCH=1 skips this paid pass (used by the v2 gate step).
+  const unknown = process.env.LOCATE_NO_SEARCH ? [] : cands.filter((c) => cache[c.id] && cache[c.id].us === null && !(cache[c.id] as any).searched);
   await pool(unknown, 6, async (c) => {
     const rs = await telemSearch(`${c.name}${c.domains[0] ? " " + c.domains[0] : ""} company headquarters location`, { num: 5, op: "locate" });
     const ev = [...new Map(rs.map((r) => [r.url, r])).values()].slice(0, 6).map((r) => ({ url: r.url, text: `${r.title}. ${r.summary ?? ""} ${r.excerpt ?? ""}`.slice(0, 900) }));
